@@ -5,5 +5,5 @@ source venv/bin/activate  # On Windows use: venv\Scripts\activate
 
 pip install fastapi uvicorn
 
-##to run it :
+## to run it :
 uvicorn main:app --reload
