@@ -1,11 +1,11 @@
 from pydantic import BaseModel, Field, EmailStr
 from typing import Optional
 
-class Organizer(BaseModel):
+class Admin(BaseModel):
     id: int = Field(..., description="Unique identifier")
     full_name: str = Field(..., description="Full name")
-    phone: str = Field(..., description="Phone number")
-    status: str = Field(..., description="Available, Busy, or Time Off")
     department: str = Field(..., description="Associated department")
+    phone: str = Field(..., description="Phone number")
+    email: EmailStr = Field(..., description="Email address")
     password: str = Field(..., description="Hashed password")
-    is_absent: bool = Field(False, description="Indicates if the organizer is absent")
+    profile_image: Optional[str] = Field(None, description="URL of the profile picture")
