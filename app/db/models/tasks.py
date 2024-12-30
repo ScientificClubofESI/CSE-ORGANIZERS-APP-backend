@@ -3,7 +3,7 @@ from typing import Optional
 from datetime import datetime
 
 class Task(BaseModel):
-    id: int = Field(..., description="Unique identifier")
+    str: int = Field(..., description="Unique identifier")
     name: str = Field(..., description="Task name")
     start_time: datetime = Field(..., description="Start time")
     end_time: datetime = Field(..., description="End time")

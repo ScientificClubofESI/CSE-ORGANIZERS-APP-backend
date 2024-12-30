@@ -1,4 +1,5 @@
 from pydantic import BaseModel
+from typing import Optional
 
 class SupervisorTaskBase(BaseModel):
     task_id: int
@@ -9,3 +10,7 @@ class SupervisorTaskCreate(SupervisorTaskBase):
 
 class SupervisorTaskRead(SupervisorTaskBase):
     pass
+
+class SupervisorTaskUpdate(BaseModel):
+    task_id: Optional[int] = None
+    supervisor_id: Optional[int] = None

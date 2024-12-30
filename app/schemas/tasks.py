@@ -26,4 +26,4 @@ class TaskUpdate(BaseModel):
     is_check_in: Optional[bool] = None
 
 class TaskRead(TaskBase):
-    id: int
+    id: str

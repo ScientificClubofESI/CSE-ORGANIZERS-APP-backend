@@ -20,4 +20,4 @@ class OrganizerUpdate(BaseModel):
     password: Optional[str] = None
 
 class OrganizerRead(OrganizerBase):
-    id: int
+    id: str

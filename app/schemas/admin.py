@@ -20,4 +20,4 @@ class AdminUpdate(BaseModel):
     password: Optional[str] = None
 
 class AdminRead(AdminBase):
-    id: int
+    id: str
