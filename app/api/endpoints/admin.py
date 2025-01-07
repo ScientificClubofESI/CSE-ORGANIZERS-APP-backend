@@ -69,23 +69,24 @@ async def delete_admin(admin_id: str):
 
     raise HTTPException(status_code=404, detail="Admin not found")
 
-@router.get("/search", response_model=List[AdminRead])
+@router.get("/1/search", response_model=List[AdminRead])
 async def search_admin(full_name: str = Query(None), email: str = Query(None)):
     if not full_name and not email:
-        raise HTTPException(status_code=400, detail="Either fullname or email must be provided")
-
+         raise HTTPException(status_code=400, detail="Either fullname or email must be provided")
+    print(f"Received full_name: {full_name}, email: {email}")
     query = {}
     if full_name:
-        query["full_name"] = full_name
+         query["full_name"] = full_name
     if email:
-        query["email"] = email
-
+         query["email"] = email
+    print(f"Query: {query}")
     admins = await Admin.find(query).to_list()
     print(admins)
     if admins:
-        for admin in admins:
+         for admin in admins:
+            print(admin)
             admin.pop("password", None)  # Remove password for security
-            admin["_id"] = str(admin["_id"]) 
-        return [AdminRead(**admin) for admin in admins]
+            admin["id"] = str(admin.pop("_id")) 
+         return [AdminRead(**admin) for admin in admins]
 
     raise HTTPException(status_code=404, detail="No matching admins found")

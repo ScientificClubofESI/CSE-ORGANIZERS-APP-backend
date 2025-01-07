@@ -8,7 +8,8 @@ MONGO_URI = os.getenv("DATA_BASE")
 
 client = AsyncIOMotorClient(MONGO_URI)
 
-database = client["Organizers-App"]
+database = client["MyLocalDataBase"]
+
 
 your_collection = database["TEST"]
 Admin = database["admins"]

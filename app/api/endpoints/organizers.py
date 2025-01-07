@@ -67,32 +67,32 @@ async def delete_organizer(organizer_id: str):
     raise HTTPException(status_code=404, detail="Organizer not found")
 
 
-@router.get("/search", response_model=List[OrganizerRead])
+@router.get("/1/search", response_model=List[OrganizerRead])
 async def search_organizers(
-    fullname: Optional[str] = Query(None),
+    full_name: Optional[str] = Query(None),
     status: Optional[str] = Query(None),
     department: Optional[str] = Query(None),
 ):
     query = {}
  
-    if fullname:
-        query["fullname"] = {"$regex": fullname, "$options": "i"}  
+    if full_name:
+        query["full_name"] = full_name
     if status:
         query["status"] = status
     if department:
         query["department"] = department
 
-
+    print(f"Received full_name: {full_name}, status: {status}")
     organizers = await Organizer.find(query).to_list()
     if organizers:
         for organizer in organizers:
-            organizer["id"] = str(organizer.pop("_id"))
+            organizer["id"] = str(organizer.pop("_id")) 
             organizer.pop("password", None)  
         return [OrganizerRead(**organizer) for organizer in organizers]
     
     raise HTTPException(status_code=404, detail="No organizers match the search criteria")
 
-@router.get("/absent", response_model=List[OrganizerRead])
+@router.get("/1/absent", response_model=List[OrganizerRead])
 async def get_absent_organizers():
     organizers = await Organizer.find({"is_absent": True}).to_list()
     if organizers:
@@ -103,7 +103,7 @@ async def get_absent_organizers():
     raise HTTPException(status_code=404, detail="No absent organizers found")
 
 
-@router.get("/present", response_model=List[OrganizerRead])
+@router.get("/1/present", response_model=List[OrganizerRead])
 async def get_present_organizers():
     organizers = await Organizer.find({"is_absent": False}).to_list()
     if organizers:
@@ -113,7 +113,7 @@ async def get_present_organizers():
         return [OrganizerRead(**organizer) for organizer in organizers]
     raise HTTPException(status_code=404, detail="No present organizers found")
 
-@router.get("/organizer/statistics")
+@router.get("/1/statistics")
 async def get_organizer_statistics():
     total_organizers = await Organizer.count_documents({})
     present_organizers = await Organizer.count_documents({"is_absent": False})

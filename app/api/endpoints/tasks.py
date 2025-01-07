@@ -61,7 +61,7 @@ async def delete_task(task_id: str):
 
     raise HTTPException(status_code=404, detail="Task not found")
 
-@router.get("/search", response_model=List[TaskRead])
+@router.get("/1/search", response_model=List[TaskRead])
 async def search_tasks(
     name: str = Query(None, description="Search by task name"),
     start_time: datetime = Query(None, description="Start time of the task"),
@@ -71,7 +71,7 @@ async def search_tasks(
     query = {}
 
     if name:
-        query["name"] = {"$regex": name, "$options": "i"}  
+        query["name"] = name  
     if start_time:
         query["start_time"] = {"$gte": start_time}
     if end_time:
@@ -87,7 +87,7 @@ async def search_tasks(
 
     raise HTTPException(status_code=404, detail="No tasks found matching the criteria")
 
-@router.get("/unfinished", response_model=List[TaskRead])
+@router.get("/1/unfinished", response_model=List[TaskRead])
 async def get_unfinished_tasks():
     tasks = await Task.find({"is_complete": False}).to_list()
     if tasks:
@@ -99,7 +99,7 @@ async def get_unfinished_tasks():
 
 from datetime import datetime
 
-@router.get("/late", response_model=List[TaskRead])
+@router.get("/1/late", response_model=List[TaskRead])
 async def get_late_tasks():
     current_time = datetime.utcnow()
     tasks = await Task.find({
@@ -114,7 +114,7 @@ async def get_late_tasks():
 
     raise HTTPException(status_code=404, detail="No late tasks found")
 
-@router.get("/statistics")
+@router.get("/1/statistics")
 async def get_task_statistics():
     total_tasks = await Task.count_documents({})
     finished_tasks = await Task.count_documents({"is_complete": True})
