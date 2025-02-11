@@ -1,9 +1,11 @@
+import os
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 from bson import ObjectId
 from db.db import your_collection
 
 app = FastAPI()
+port = int(os.getenv("PORT", 8000))
 
 # Helper function to format ObjectId as string
 def to_json(data):
@@ -38,3 +40,7 @@ async def delete_item(item_id: str):
     if result.deleted_count == 0:
         raise HTTPException(status_code=404, detail="Item not found")
     return {"detail": "Item deleted"}
+
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run(app, host="0.0.0.0", port=port)
