@@ -1,6 +1,6 @@
 from fastapi import APIRouter, HTTPException ,Query
 from bson import ObjectId
-from db.db import Organizer
+from db.models.organizers import Organizer
 from schemas.organizers import OrganizerCreate, OrganizerRead, OrganizerUpdate
 from passlib.context import CryptContext
 from typing import List, Optional

@@ -1,6 +1,6 @@
 from fastapi import APIRouter, HTTPException
 from bson import ObjectId
-from db.db import SupervisorTask
+from db.models.supervisortask import SupervisorTask
 from schemas.supervisortask import SupervisorTaskCreate, SupervisorTaskRead
 from typing import List
 

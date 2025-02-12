@@ -6,3 +6,4 @@ pymongo
 email-validator
 pydantic[email]
 passlib
+qrcode

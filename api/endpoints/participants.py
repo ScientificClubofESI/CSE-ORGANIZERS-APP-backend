@@ -3,7 +3,7 @@ import base64
 from io import BytesIO
 from fastapi import APIRouter, HTTPException
 from bson import ObjectId
-from db.db import Participant
+from db.models.participants import Participant
 from schemas.participants import ParticipantCreate, ParticipantRead, ParticipantUpdate
 from passlib.context import CryptContext
 from typing import Optional

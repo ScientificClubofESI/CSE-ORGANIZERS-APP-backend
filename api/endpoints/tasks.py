@@ -1,6 +1,6 @@
 from fastapi import APIRouter, HTTPException , Query
 from bson import ObjectId
-from db.db import Task
+from db.models.tasks import Task
 from schemas.tasks import TaskCreate, TaskRead, TaskUpdate
 from typing import List
 from datetime import datetime

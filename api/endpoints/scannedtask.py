@@ -1,6 +1,7 @@
 from fastapi import APIRouter, HTTPException
 from bson import ObjectId
-from db.db import ScannedTask ,Participant
+from db.models.scannedtask import ScannedTask 
+from db.models.participants  import  Participant
 from schemas.scannedtask import ScannedTaskCreate, ScannedTaskRead, ScannedTaskUpdate
 from typing import List
 from schemas.participants import ParticipantRead
