@@ -5,8 +5,9 @@ from bson import ObjectId
 from db.db import your_collection
 
 app = FastAPI()
+
 # Get port from environment variable for Render deployment
-port = int(os.getenv("PORT", 10000))
+port = int(os.environ.get("PORT", 10000))
 
 # Helper function to format ObjectId as string
 def to_json(data):
@@ -26,13 +27,11 @@ async def read_root():
 
 @app.get("/items")
 async def read_items():
-    # Read all documents from the collection
-    items = await your_collection.find().to_list(100)  # Fetch up to 100 items
+    items = await your_collection.find().to_list(100)
     return [to_json(item) for item in items]
 
 @app.post("/items")
 async def create_item(item: Item):
-    # Insert a new document into the collection
     result = await your_collection.insert_one(item.dict())
     if not result.inserted_id:
         raise HTTPException(status_code=500, detail="Item could not be added")
@@ -40,7 +39,6 @@ async def create_item(item: Item):
 
 @app.delete("/items/{item_id}")
 async def delete_item(item_id: str):
-    # Delete a document by ObjectId
     result = await your_collection.delete_one({"_id": ObjectId(item_id)})
     if result.deleted_count == 0:
         raise HTTPException(status_code=404, detail="Item not found")
@@ -48,5 +46,4 @@ async def delete_item(item_id: str):
 
 if __name__ == "__main__":
     import uvicorn
-    # For deployment: bind to 0.0.0.0 to allow external access
-    uvicorn.run(app, host="0.0.0.0", port=port)
+    uvicorn.run("main:app", host="0.0.0.0", port=port, reload=True)
