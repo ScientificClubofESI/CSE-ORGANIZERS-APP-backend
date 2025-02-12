@@ -1,5 +1,5 @@
+from pydantic import BaseModel, EmailStr
 from typing import Optional
-from pydantic import BaseModel, Field, EmailStr
 
 class AdminBase(BaseModel):
     full_name: str
@@ -11,13 +11,13 @@ class AdminBase(BaseModel):
 class AdminCreate(AdminBase):
     password: str
 
-class AdminUpdate(BaseModel):
+class AdminUpdate(AdminBase):
     full_name: Optional[str] = None
     department: Optional[str] = None
     phone: Optional[str] = None
     email: Optional[EmailStr] = None
-    profile_image: Optional[str] = None
     password: Optional[str] = None
+    profile_image: Optional[str] = None
 
 class AdminRead(AdminBase):
-    id: int
+    id: str

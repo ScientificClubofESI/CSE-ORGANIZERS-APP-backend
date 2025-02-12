@@ -7,3 +7,4 @@ email-validator
 pydantic[email]
 passlib
 qrcode
+bcrypt
