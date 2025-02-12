@@ -1,6 +1,6 @@
 from fastapi import APIRouter, HTTPException ,Query
 from bson import ObjectId
-from db.db import Admin
+from db.models.admin import Admin
 from schemas.admin import AdminCreate, AdminRead, AdminUpdate
 from passlib.context import CryptContext
 from typing import List

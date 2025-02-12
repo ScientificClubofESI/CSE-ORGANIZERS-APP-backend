@@ -3,3 +3,6 @@ motor
 uvicorn
 python-dotenv
 pymongo
+email-validator
+pydantic[email]
+passlib

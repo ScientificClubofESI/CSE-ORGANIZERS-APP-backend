@@ -1,6 +1,6 @@
 from fastapi import APIRouter, HTTPException
 from bson import ObjectId
-from db.db import AssignedTask
+from db.models.assignedtask import AssignedTask
 from schemas.assignedtask import AssignedTaskCreate, AssignedTaskRead, AssignedTaskUpdate
 from typing import List
 
