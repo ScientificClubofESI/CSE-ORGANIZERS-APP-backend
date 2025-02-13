@@ -2,7 +2,6 @@ from typing import Optional
 from pydantic import BaseModel, EmailStr
 
 class ParticipantBase(BaseModel):
-    qr_code: str
     full_name: str
     email: EmailStr
     phone: str
@@ -19,4 +18,4 @@ class ParticipantUpdate(BaseModel):
     password: Optional[str] = None
 
 class ParticipantRead(ParticipantBase):
-    pass
+    id: str

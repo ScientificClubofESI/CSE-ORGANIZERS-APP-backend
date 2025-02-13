@@ -55,13 +55,15 @@ async def update_admin(admin_id: str, admin: AdminUpdate):
     if "password" in update_data:
         update_data["password"] = hash_password(update_data["password"])
     
-    result = await db.admin_collection.update_one(
+    await db.admin_collection.update_one(
         {"_id": ObjectId(admin_id)}, 
         {"$set": update_data}
     )
     
-    if result.modified_count == 1:
-        updated_admin = await db.admin_collection.find_one({"_id": ObjectId(admin_id)})
+    updated_admin = await db.admin_collection.find_one({"_id": ObjectId(admin_id)})
+
+
+    if updated_admin:
         updated_admin["id"] = str(updated_admin.pop("_id"))
         updated_admin.pop("password", None)
         return AdminRead(**updated_admin)

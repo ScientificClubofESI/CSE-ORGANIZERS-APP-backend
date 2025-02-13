@@ -1,23 +1,12 @@
-import qrcode
-import base64
-from io import BytesIO
+
 from fastapi import APIRouter, HTTPException
 from bson import ObjectId
-from db.models.participants import Participant
 from schemas.participants import ParticipantCreate, ParticipantRead, ParticipantUpdate
 from passlib.context import CryptContext
-from typing import Optional
-from typing import List
+from db import db
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
-# QR code generation function (Base64 encoded string)
-def generate_qr_code(data: str) -> str:
-    qr = qrcode.make(data)
-    buffered = BytesIO()
-    qr.save(buffered, format="PNG")
-    qr_code_string = base64.b64encode(buffered.getvalue()).decode("utf-8")  # Encode as base64 string
-    return qr_code_string
 
 
 def hash_password(password: str) -> str:
@@ -27,38 +16,60 @@ router = APIRouter()
 
 @router.post("/", response_model=ParticipantRead)
 async def create_participant(participant: ParticipantCreate):
+    existing_participant = await db.participant_collection.find_one({"email": participant.email})
+    if existing_participant:
+        raise HTTPException(status_code=400, detail="Email already registered")
+
     hashed_password = hash_password(participant.password)
     participant_data = participant.dict()
     participant_data["password"] = hashed_password
-    qr_code_image = generate_qr_code(participant_data["full_name"])
-    participant_data["qr_code"] = qr_code_image
-    result = await Participant.insert_one(participant_data)
-    participant_data["qr_code"] = str(result.inserted_id)  
+    
+    result = await db.participant_collection.insert_one(participant_data)
+    participant_data["id"] = str(result.inserted_id)
     participant_data.pop("password") 
 
     return ParticipantRead(**participant_data)
 
-@router.get("/{qr_code}", response_model=ParticipantRead)
-async def get_participant(qr_code: str):
-    participant = await Participant.find_one({"qr_code": qr_code})
-    if participant:
-        participant["qr_code"] = qr_code  
-        return ParticipantRead(**participant)
-    raise HTTPException(status_code=404, detail="Participant not found")
+@router.get("/{participant_id}", response_model=ParticipantRead)
+async def get_participant(participant_id: str):
+    if not ObjectId.is_valid(participant_id):
+        raise HTTPException(status_code=400, detail="Invalid participant ID")
+    
+    admin = await db.participant_collection.find_one({"_id": ObjectId(participant_id)})
+    if admin:
+        admin["id"] = str(admin.pop("_id"))
+        admin.pop("password", None)
+        return ParticipantRead(**admin)
+    raise HTTPException(status_code=404, detail="participant not found")
 
-@router.put("/{qr_code}", response_model=ParticipantRead)
-async def update_participant(qr_code: str, participant: ParticipantUpdate):
+@router.put("/{participant_id}", response_model=ParticipantRead)
+async def update_participant(participant_id: str, participant: ParticipantUpdate):
+    if not ObjectId.is_valid(participant_id):
+        raise HTTPException(status_code=400, detail="Invalid participant ID")
+    
     update_data = {k: v for k, v in participant.dict().items() if v is not None}
-    result = await Participant.update_one({"qr_code": qr_code}, {"$set": update_data})
-    if result.modified_count == 1:
-        updated_participant = await Participant.find_one({"qr_code": qr_code})
-        updated_participant["qr_code"] = qr_code
-        return ParticipantRead(**updated_participant)
-    raise HTTPException(status_code=404, detail="Participant not found")
+    if "password" in update_data:
+        update_data["password"] = hash_password(update_data["password"])
+    
+    result = await db.participant_collection.update_one(
+        {"_id": ObjectId(participant_id)}, 
+        {"$set": update_data}
+    )
+    
+    updated_participant = await db.participant_collection.find_one({"_id": ObjectId(participant_id)})
 
-@router.delete("/{qr_code}")
-async def delete_participant(qr_code: str):
-    result = await Participant.delete_one({"qr_code": qr_code})
+    if updated_participant:
+        updated_participant["id"] = str(updated_participant.pop("_id"))
+        updated_participant.pop("password", None)
+        return ParticipantRead(**updated_participant)
+    raise HTTPException(status_code=404, detail="participant not found")
+
+@router.delete("/{participant_id}")
+async def delete_participant(participant_id: str):
+    if not ObjectId.is_valid(participant_id):
+        raise HTTPException(status_code=400, detail="Invalid participant ID")
+    
+    result = await db.participant_collection.delete_one({"_id": ObjectId(participant_id)})
     if result.deleted_count == 1:
-        return {"message": "Participant deleted successfully"}
+        return {"message": "participant deleted successfully"}
     raise HTTPException(status_code=404, detail="Participant not found")

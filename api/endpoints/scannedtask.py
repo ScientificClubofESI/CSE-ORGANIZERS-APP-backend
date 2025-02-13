@@ -24,11 +24,11 @@ async def get_unscanned_participants(task_id: str):
     participants_with_details = []
 
     for scanned_task in unscanned_participants:
-        participant_id = scanned_task.get("participant_qr")
+        participant_id = scanned_task.get("participant_id")
         participant = await Participant.find_one({"_id": ObjectId(participant_id)})
         if participant:
             participant_data = {
-                "qr_code": str(participant["qr_code"]),
+                "id": str(participant["id"]),
                 "full_name": participant["full_name"],
                 "email": participant["email"],
                 "phone": participant["phone"],
@@ -53,7 +53,7 @@ async def get_scanned_participants(task_id: str):
         participant = await Participant.find_one({"_id": ObjectId(participant_id)})
         if participant:
             participant_data = {
-                "qr_code": str(participant["qr_code"]),
+                "id": str(participant["id"]),
                 "full_name": participant["full_name"],
                 "email": participant["email"],
                 "phone": participant["phone"],
