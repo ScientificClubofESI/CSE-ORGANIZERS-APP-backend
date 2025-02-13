@@ -8,14 +8,13 @@ class ParticipantBase(BaseModel):
     team: Optional[str] = None
 
 class ParticipantCreate(ParticipantBase):
-    password: str
+   pass
 
 class ParticipantUpdate(BaseModel):
     full_name: Optional[str] = None
     email: Optional[EmailStr] = None
     phone: Optional[str] = None
     team: Optional[str] = None
-    password: Optional[str] = None
-
+   
 class ParticipantRead(ParticipantBase):
     id: str

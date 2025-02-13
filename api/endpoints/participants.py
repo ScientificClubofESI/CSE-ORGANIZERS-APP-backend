@@ -9,8 +9,6 @@ pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 
 
-def hash_password(password: str) -> str:
-    return pwd_context.hash(password)
 
 router = APIRouter()
 
@@ -20,13 +18,13 @@ async def create_participant(participant: ParticipantCreate):
     if existing_participant:
         raise HTTPException(status_code=400, detail="Email already registered")
 
-    hashed_password = hash_password(participant.password)
+   
     participant_data = participant.dict()
-    participant_data["password"] = hashed_password
+ 
     
     result = await db.participant_collection.insert_one(participant_data)
     participant_data["id"] = str(result.inserted_id)
-    participant_data.pop("password") 
+  
 
     return ParticipantRead(**participant_data)
 
@@ -38,7 +36,7 @@ async def get_participant(participant_id: str):
     admin = await db.participant_collection.find_one({"_id": ObjectId(participant_id)})
     if admin:
         admin["id"] = str(admin.pop("_id"))
-        admin.pop("password", None)
+       
         return ParticipantRead(**admin)
     raise HTTPException(status_code=404, detail="participant not found")
 
@@ -48,8 +46,7 @@ async def update_participant(participant_id: str, participant: ParticipantUpdate
         raise HTTPException(status_code=400, detail="Invalid participant ID")
     
     update_data = {k: v for k, v in participant.dict().items() if v is not None}
-    if "password" in update_data:
-        update_data["password"] = hash_password(update_data["password"])
+  
     
     result = await db.participant_collection.update_one(
         {"_id": ObjectId(participant_id)}, 
@@ -60,7 +57,7 @@ async def update_participant(participant_id: str, participant: ParticipantUpdate
 
     if updated_participant:
         updated_participant["id"] = str(updated_participant.pop("_id"))
-        updated_participant.pop("password", None)
+      
         return ParticipantRead(**updated_participant)
     raise HTTPException(status_code=404, detail="participant not found")
 
