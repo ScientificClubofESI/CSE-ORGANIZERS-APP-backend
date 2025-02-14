@@ -10,3 +10,4 @@ qrcode
 bcrypt
 typing 
 pydantic
+pathlib

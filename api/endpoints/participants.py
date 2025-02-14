@@ -6,7 +6,9 @@ from bson import ObjectId
 from schemas.participants import ParticipantCreate, ParticipantRead, ParticipantUpdate
 from passlib.context import CryptContext
 from db import db
-from pydantic import EmailStr
+from starlette.responses import FileResponse
+from pathlib import Path
+import qrcode
 
 
 
@@ -36,7 +38,55 @@ async def create_participant(participant: ParticipantCreate):
     return ParticipantRead(**participant_data)
 
 
+@router.post("/export_csv")
+async def export_participants():
+    """Exports participants to a CSV file and returns the download link"""
 
+    # Define file paths relative to the project
+    current_dir = Path(__file__).resolve().parent
+    csv_path = current_dir / "../../csv/participants.csv"
+    qr_codes_dir = current_dir / "../../csv/qr_codes"
+
+    # Ensure QR codes directory exists
+    qr_codes_dir.mkdir(parents=True, exist_ok=True)
+
+    # Fetch all participants from MongoDB
+    participants = await db.participant_collection.find({}).to_list(length=None)
+
+    if not participants:
+        raise HTTPException(status_code=404, detail="No participants found")
+
+    # Write participants to CSV
+    with open(csv_path, mode="w", newline="", encoding="utf-8") as file:
+        writer = csv.writer(file)
+        writer.writerow(["full_name", "qr_code"])
+
+        for participant in participants:
+            full_name = participant.get("full_name", "Unknown")
+            participant_id = str(participant["_id"])
+            qr_code_path = qr_codes_dir / f"{full_name}.png"
+
+               # Generate QR Code with no border
+            qr = qrcode.QRCode(
+                version=1, 
+                error_correction=qrcode.constants.ERROR_CORRECT_L, 
+                box_size=10, 
+                border=0  # <---- No white border
+            )
+            qr.add_data(participant_id)
+            qr.make(fit=True)
+            img = qr.make_image(fill="black", back_color="white")  # Generates the image
+
+            # Save QR Code
+            img.save(qr_code_path)
+
+            # Write relative QR code path in CSV
+            relative_qr_path = os.path.relpath(qr_code_path, current_dir)
+            writer.writerow([full_name, relative_qr_path])
+
+    print(f"✅ CSV exported successfully: {csv_path}")
+
+    return FileResponse(csv_path, filename="participants.csv", media_type="text/csv")
 
 @router.post("/import_csv", response_model=List[ParticipantRead])
 async def import_participants_from_csv():
