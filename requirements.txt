@@ -8,3 +8,5 @@ pydantic[email]
 passlib
 qrcode
 bcrypt
+typing 
+pydantic
