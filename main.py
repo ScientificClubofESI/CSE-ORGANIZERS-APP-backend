@@ -8,8 +8,19 @@ from api.endpoints.participants import router as participant_router
 from api.endpoints.scannedtask import router as scanned_task_router
 from api.endpoints.supervisortask import router as supervisor_task_router
 from api.endpoints.tasks import router as task_router
+from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 
 app = FastAPI()
+
+# Allow frontend to access the backend
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:3000"],  # Adjust for your frontend domain
+    allow_credentials=True,
+    allow_methods=["*"],  # Allows all HTTP methods (GET, POST, PUT, DELETE, etc.)
+    allow_headers=["*"],  # Allows all headers
+)
 
 # Get port from environment variable for Render deployment
 port = int(os.environ.get("PORT", 10000))

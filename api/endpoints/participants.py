@@ -71,7 +71,7 @@ async def export_participants():
                 version=1, 
                 error_correction=qrcode.constants.ERROR_CORRECT_L, 
                 box_size=10, 
-                border=0  # <---- No white border
+                border=1  # <---- No white border
             )
             qr.add_data(participant_id)
             qr.make(fit=True)

@@ -2,6 +2,7 @@ from typing import Optional
 from pydantic import BaseModel
 
 class OrganizerBase(BaseModel):
+    email: str
     full_name: str
     phone: str
     status: str
@@ -12,6 +13,7 @@ class OrganizerCreate(OrganizerBase):
     password: str
 
 class OrganizerUpdate(BaseModel):
+    email: Optional[str] = None
     full_name: Optional[str] = None
     phone: Optional[str] = None
     status: Optional[str] = None
@@ -20,4 +22,4 @@ class OrganizerUpdate(BaseModel):
     password: Optional[str] = None
 
 class OrganizerRead(OrganizerBase):
-    id: int
+    id: str
