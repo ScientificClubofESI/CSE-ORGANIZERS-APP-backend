@@ -15,12 +15,12 @@ from dotenv import load_dotenv
 app = FastAPI()
 load_dotenv()
 
-FRONTEND_URL = os.getenv("FRONTEND_URL")
+FRONT_URL = os.getenv("FRONTEND_URL")
 
 # Allow frontend to access the backend
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[FRONTEND_URL],  # Adjust for your frontend domain
+    allow_origins=[FRONT_URL],  # Adjust for your frontend domain
     allow_credentials=True,
     allow_methods=["*"],  # Allows all HTTP methods (GET, POST, PUT, DELETE, etc.)
     allow_headers=["*"],  # Allows all headers
