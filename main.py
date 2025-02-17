@@ -20,14 +20,14 @@ FRONT_URL = os.getenv("FRONTEND_URL")
 # Allow frontend to access the backend
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[FRONT_URL],  # Adjust for your frontend domain
+    allow_origins=[FRONT_URL,"http://localhost:3000"],  # Adjust for your frontend domain
     allow_credentials=True,
     allow_methods=["*"],  # Allows all HTTP methods (GET, POST, PUT, DELETE, etc.)
     allow_headers=["*"],  # Allows all headers
 )
 
-# Get port from environment variable for Render deployment
-port = int(os.environ.get("PORT", 10000))
+port = int(os.environ.get("PORT", 8000))  # Use 8000 as a fallback
+
 
 @app.get("/")
 async def root():
@@ -45,4 +45,4 @@ app.include_router(task_router, prefix="/tasks", tags=["Tasks"])
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run("main:app", host="0.0.0.0", port=port, reload=True)
+    uvicorn.run("main:app", host="0.0.0.0", port=port)
