@@ -9,3 +9,5 @@ class Organizer(BaseModel):
     department: str = Field(..., description="Associated department")
     password: str = Field(..., description="Hashed password")
     is_absent: Optional[bool] = Field(False, description="Indicates if the organizer is absent")
+
+

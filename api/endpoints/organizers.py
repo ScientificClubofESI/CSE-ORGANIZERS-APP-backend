@@ -1,18 +1,39 @@
-from fastapi import APIRouter, HTTPException ,Query
+from fastapi import APIRouter, HTTPException ,Query , status
 from bson import ObjectId
 import csv , os
 from db.models.organizers import Organizer
-from schemas.organizers import OrganizerCreate, OrganizerRead, OrganizerUpdate
+from schemas.organizers import OrganizerCreate, OrganizerRead, OrganizerUpdate,OrganizerLoginRequest, OrganizerLoginResponse
 from passlib.context import CryptContext
 from typing import List, Optional
 from db import db
+
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 def hash_password(password: str) -> str:
     return pwd_context.hash(password)
 
+def verify_password(plain_password: str, hashed_password: str) -> bool:
+    return pwd_context.verify(plain_password, hashed_password)
 
 router = APIRouter()
+
+@router.post("/login", response_model=OrganizerLoginResponse)
+async def login_organizer(login_data: OrganizerLoginRequest):
+    # Find the organizer by email
+    organizer = await db.organizer_collection.find_one({"email": login_data.email})
+    
+    # Check if organizer exists and password matches
+    if not organizer or not verify_password(login_data.password, organizer["password"]):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid email or password"
+        )
+    
+    # Return organizer data (excluding password)
+    organizer_data = {k: v for k, v in organizer.items() if k != "password"}
+    organizer_data["id"] = str(organizer_data.pop("_id"))  # Convert ObjectId to string
+    
+    return OrganizerLoginResponse(**organizer_data)
 
 @router.post("/", response_model=OrganizerRead)
 async def create_organizer(organizer: OrganizerCreate):

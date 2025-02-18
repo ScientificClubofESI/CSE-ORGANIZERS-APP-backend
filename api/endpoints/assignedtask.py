@@ -5,6 +5,7 @@ from schemas.assignedtask import AssignedTaskCreate, AssignedTaskRead, AssignedT
 from typing import List
 from db import db
 from pymongo import ReturnDocument
+from schemas.tasks import TaskCreate, TaskRead, TaskUpdate
 
 router = APIRouter()
 
@@ -35,7 +36,7 @@ async def get_all_tasks():
 @router.get("/{task_id}", response_model=List[AssignedTaskRead])
 async def get_assigned_task(task_id: str):
     # Use .to_list() to fetch the results from
-    print("testttt")
+   
     tasks = await db.assigned_task_collection.find({"task_id": task_id}).to_list(length=100) 
 
     if tasks:
@@ -64,11 +65,27 @@ async def get_assigned_task(task_id: str):
     raise HTTPException(status_code=404, detail="No organizers found for this task")
 
 
-@router.get("/organizer/{organizer_id}", response_model=List[AssignedTaskRead])
+@router.get("/organizer/{organizer_id}", response_model=List[TaskRead])
 async def get_tasks_by_organizer(organizer_id: str):
-    tasks = await db.assigned_task_collection.find({"organizer_id": {"$in": [organizer_id]}}).to_list(length=None)
-    
-    if tasks:
-        return [AssignedTaskRead(**task) for task in tasks]
-    
-    raise HTTPException(status_code=404, detail="No assigned tasks found for this organizer")
+    # Étape 1 : Récupérer les tâches assignées à cet organizer_id
+    assigned_tasks = await db.assigned_task_collection.find(
+        {"organizer_id": {"$in": [organizer_id]}}
+    ).to_list(length=None)
+
+    if not assigned_tasks:
+        raise HTTPException(status_code=404, detail="No assigned tasks found for this organizer")
+
+    # Extraire les task_id et les convertir en ObjectId
+    task_ids = [ObjectId(task["task_id"]) for task in assigned_tasks if ObjectId.is_valid(task["task_id"])]
+
+    if not task_ids:
+        raise HTTPException(status_code=404, detail="No valid task IDs found for this organizer")
+
+    # Étape 2 : Trouver les tâches dans task_collection
+    tasks = await db.task_collection.find({"_id": {"$in": task_ids}}).to_list(length=None)
+
+    # Convertir `_id` en `id` pour correspondre au modèle TaskRead
+    for task in tasks:
+        task["id"] = str(task.pop("_id"))
+
+    return [TaskRead(**task) for task in tasks]

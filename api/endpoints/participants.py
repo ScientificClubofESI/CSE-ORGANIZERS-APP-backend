@@ -4,7 +4,7 @@ from typing import List
 from fastapi import APIRouter, UploadFile, File, HTTPException
 from bson import ObjectId
 from schemas.participants import ParticipantCreate, ParticipantRead, ParticipantUpdate
-from passlib.context import CryptContext
+from passlib.context import CryptContext # type: ignore
 from db import db
 from starlette.responses import FileResponse
 from pathlib import Path

@@ -1,6 +1,9 @@
 from typing import Optional
 from pydantic import BaseModel
 
+
+
+
 class OrganizerBase(BaseModel):
     email: str
     full_name: str
@@ -8,6 +11,7 @@ class OrganizerBase(BaseModel):
     status: str
     department: str
     is_absent: bool = False
+
 
 class OrganizerCreate(OrganizerBase):
     password: str
@@ -23,3 +27,11 @@ class OrganizerUpdate(BaseModel):
 
 class OrganizerRead(OrganizerBase):
     id: str
+
+class OrganizerLoginRequest(BaseModel):
+    email: str
+    password: str
+
+class OrganizerLoginResponse(OrganizerBase):
+    id: str
+    # This inherits all fields from OrganizerBase
