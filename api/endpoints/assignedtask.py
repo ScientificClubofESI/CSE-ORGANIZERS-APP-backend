@@ -34,10 +34,35 @@ async def get_all_tasks():
 
 @router.get("/{task_id}", response_model=List[AssignedTaskRead])
 async def get_assigned_task(task_id: str):
-    tasks = await db.assigned_task_collection.find({"task_id": task_id}).to_list()
+    # Use .to_list() to fetch the results from
+    print("testttt")
+    tasks = await db.assigned_task_collection.find({"task_id": task_id}).to_list(length=100) 
+
     if tasks:
-        return [AssignedTaskRead(**task) for task in tasks]
-    raise HTTPException(status_code=404, detail="No organizers found for this tasks")
+        print(tasks)
+        # Initialize an empty list to store the full names of organizers and supervisors
+        result = []
+
+        for task in tasks:
+            # Fetch full names from the organizer collection
+            organizers = await db.organizer_collection.find({"_id": {"$in": [ObjectId(id) for id in task["organizer_id"]]}}).to_list(length=100)
+            organizers_names = [organizer["full_name"] for organizer in organizers]
+
+            # Fetch full names from the supervisor collection
+            supervisors = await db.organizer_collection.find({"_id": {"$in": [ObjectId(id) for id in task["supervisor_id"]]}}).to_list(length=100)
+            supervisors_names = [supervisor["full_name"] for supervisor in supervisors]
+
+            # Create the result object with the full names instead of IDs
+            result.append(AssignedTaskRead(
+                task_id=task["task_id"],
+                organizer_id=organizers_names,
+                supervisor_id=supervisors_names
+            ))
+
+        return result
+
+    raise HTTPException(status_code=404, detail="No organizers found for this task")
+
 
 @router.get("/organizer/{organizer_id}", response_model=List[AssignedTaskRead])
 async def get_tasks_by_organizer(organizer_id: str):

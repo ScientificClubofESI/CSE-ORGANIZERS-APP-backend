@@ -20,7 +20,7 @@ FRONT_URL = os.getenv("FRONTEND_URL")
 # Allow frontend to access the backend
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[FRONT_URL,"http://localhost:3000"],  # Adjust for your frontend domain
+    allow_origins=["*"],  # Adjust for your frontend domain
     allow_credentials=True,
     allow_methods=["*"],  # Allows all HTTP methods (GET, POST, PUT, DELETE, etc.)
     allow_headers=["*"],  # Allows all headers
