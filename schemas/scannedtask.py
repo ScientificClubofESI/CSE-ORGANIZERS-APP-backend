@@ -13,6 +13,6 @@ class ScannedTaskRead(ScannedTaskBase):
     pass
 
 class ScannedTaskUpdate(BaseModel):
-    task_id: Optional[str] = None
-    participant_qr: Optional[str] = None
+    task_id: str
+    participant_qr: str
     scanned: Optional[bool] = False

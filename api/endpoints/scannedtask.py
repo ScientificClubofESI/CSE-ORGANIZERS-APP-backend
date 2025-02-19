@@ -15,6 +15,41 @@ async def create_scanned_task(scanned_task: ScannedTaskCreate):
     result = await db.scanned_task_collection.insert_one(scanned_task_data)
     return ScannedTaskRead(**scanned_task_data)
 
+@router.put("/", response_model=ScannedTaskRead)
+async def update_scanned_status(scanned_task_update: ScannedTaskUpdate):
+    # Extract fields from the input
+    task_id = scanned_task_update.task_id
+    participant_qr = scanned_task_update.participant_qr
+    scanned_status = scanned_task_update.scanned
+
+    # Define the filter to find the specific task and participant
+    filter_query = {
+        "task_id": task_id,
+        "participant_qr": participant_qr
+    }
+
+    # Define the update operation
+    update_data = {
+        "$set": {
+            "scanned": scanned_status
+        }
+    }
+
+    # Perform the update operation
+    result = await db.scanned_task_collection.update_one(filter_query, update_data)
+
+    # Check if the task was found and updated
+    if result.matched_count == 0:
+        raise HTTPException(status_code=404, detail="Task or participant not found")
+
+    # Fetch the updated task to return it
+    updated_task = await db.scanned_task_collection.find_one(filter_query)
+    if updated_task is None:
+        raise HTTPException(status_code=404, detail="Task not found after update")
+
+    return ScannedTaskRead(**updated_task)
+
+
 
 @router.get("/{task_id}", response_model=List[dict])  
 async def get_all_participants_with_scan_status(task_id: str):
@@ -73,3 +108,4 @@ async def get_scanned_participants(task_id: str):
             continue
 
     return participants_with_details
+

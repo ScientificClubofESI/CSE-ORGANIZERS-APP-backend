@@ -50,10 +50,7 @@ async def update_task(task_id: str, task: TaskUpdate):
 
     raise HTTPException(status_code=404, detail="Task not found")
 
-from fastapi import APIRouter, HTTPException
-from bson import ObjectId
 
-router = APIRouter()
 
 @router.delete("/{task_id}")
 async def delete_task(task_id: str):
