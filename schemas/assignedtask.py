@@ -10,6 +10,11 @@ class AssignedTaskBase(BaseModel):
     task_id: str
     organizer_id: List[str]
     supervisor_id: Optional[List[str]] = None
+    
+class AssignedTaskUpdate(BaseModel):
+    task_id: str
+    organizer_id: Optional[List[str]]=None
+    supervisor_id: Optional[str] = None
 
 class AssignedTaskCreate(AssignedTaskBase):
     pass

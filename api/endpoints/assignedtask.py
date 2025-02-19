@@ -67,25 +67,23 @@ async def get_assigned_task(task_id: str):
 
 
 
-@router.put("/{task_id}", response_model=AssignedTaskRead)
-async def update_assigned_task(task_id: str, task: AssignedTaskCreate):
-    task_data = {k: v for k, v in task.dict().items() if v is not None}  # Exclure les champs None
+@router.put("/", response_model=AssignedTaskUpdate)
+async def update_assigned_task(task: AssignedTaskUpdate):
+    task_data = {k: v for k, v in task.dict().items() if k != "task_id" and v is not None}  # Exclude task_id from update
 
     if not task_data:
         raise HTTPException(status_code=400, detail="No valid fields provided for update")
 
     updated_task = await db.assigned_task_collection.find_one_and_update(
-        {"task_id": task_id},  # Trouver la tâche
-        {"$set": task_data},   # Mettre à jour seulement les champs fournis
-        return_document=ReturnDocument.AFTER  # Retourne la version mise à jour
+        {"task_id": task.task_id},  # Find task using task_id from body
+        {"$set": task_data},  # Update only provided fields
+        return_document=ReturnDocument.AFTER  # Return the updated document
     )
 
     if not updated_task:
         raise HTTPException(status_code=404, detail="Task not found")
 
-    updated_task["id"] = str(updated_task["_id"])  # Convertit ObjectId en string
-    return AssignedTaskRead(**updated_task)
-
+    return AssignedTaskUpdate(**updated_task)
 
 @router.get("/organizer/{organizer_id}", response_model=List[Dict])
 async def get_tasks_by_organizer(organizer_id: str):
