@@ -40,14 +40,31 @@ async def update_task(task_id: str, task: TaskUpdate):
     if not ObjectId.is_valid(task_id):
         raise HTTPException(status_code=400, detail="Invalid task ID")
 
+    # Filter out None values from the update data
     update_data = {k: v for k, v in task.dict().items() if v is not None}
-    result = await db.task_collection.update_one({"_id": ObjectId(task_id)}, {"$set": update_data})
 
+    # If no valid fields are provided for update, return the existing task
+    if not update_data:
+        existing_task = await db.task_collection.find_one({"_id": ObjectId(task_id)})
+        if existing_task:
+            existing_task["id"] = str(existing_task.pop("_id"))
+            return TaskRead(**existing_task)
+        else:
+            raise HTTPException(status_code=404, detail="Task not found")
+
+    # Perform the update if there are valid fields
+    result = await db.task_collection.update_one(
+        {"_id": ObjectId(task_id)},
+        {"$set": update_data}
+    )
+
+    # Return the updated task
     if result.modified_count == 1:
         updated_task = await db.task_collection.find_one({"_id": ObjectId(task_id)})
         updated_task["id"] = str(updated_task.pop("_id"))
         return TaskRead(**updated_task)
 
+    # If the task was not found, raise a 404 error
     raise HTTPException(status_code=404, detail="Task not found")
 
 

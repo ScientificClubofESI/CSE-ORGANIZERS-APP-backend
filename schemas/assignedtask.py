@@ -14,7 +14,7 @@ class AssignedTaskBase(BaseModel):
 class AssignedTaskUpdate(BaseModel):
     task_id: str
     organizer_id: Optional[List[str]]=None
-    supervisor_id: Optional[str] = None
+    supervisor_id: Optional[List[str]] = None
 
 class AssignedTaskCreate(AssignedTaskBase):
     pass
