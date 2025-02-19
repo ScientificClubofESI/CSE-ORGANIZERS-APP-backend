@@ -50,17 +50,29 @@ async def update_task(task_id: str, task: TaskUpdate):
 
     raise HTTPException(status_code=404, detail="Task not found")
 
+from fastapi import APIRouter, HTTPException
+from bson import ObjectId
+
+router = APIRouter()
+
 @router.delete("/{task_id}")
 async def delete_task(task_id: str):
     if not ObjectId.is_valid(task_id):
         raise HTTPException(status_code=400, detail="Invalid task ID")
 
-    result = await db.task_collection.delete_one({"_id": ObjectId(task_id)})
+    # Delete the main task
+    task_result = await db.task_collection.delete_one({"_id": ObjectId(task_id)})
 
-    if result.deleted_count == 1:
-        return {"message": "Task deleted successfully"}
+    # Delete any assigned tasks related to this task
+    assigned_task_result = await db.assigned_task_collection.delete_many({"task_id": task_id})
+
+    if task_result.deleted_count == 1:
+        return {
+            "message": "Task deleted successfully",
+        }
 
     raise HTTPException(status_code=404, detail="Task not found")
+
 
 @router.get("/1/search", response_model=List[TaskRead])
 async def search_tasks(
