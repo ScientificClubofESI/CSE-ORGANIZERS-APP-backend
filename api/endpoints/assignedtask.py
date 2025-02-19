@@ -6,6 +6,7 @@ from typing import List
 from db import db
 from pymongo import ReturnDocument
 from schemas.tasks import TaskCreate, TaskRead, TaskUpdate
+from typing import List, Dict
 
 router = APIRouter()
 
@@ -65,27 +66,54 @@ async def get_assigned_task(task_id: str):
     raise HTTPException(status_code=404, detail="No organizers found for this task")
 
 
-@router.get("/organizer/{organizer_id}", response_model=List[TaskRead])
+@router.get("/organizer/{organizer_id}", response_model=List[Dict])
 async def get_tasks_by_organizer(organizer_id: str):
-    # Étape 1 : Récupérer les tâches assignées à cet organizer_id
+    # Initialize an empty list to store all task IDs and their roles
+    task_roles = {}
+    
+    # Étape 1 : Récupérer les tâches assignées à cet organizer_id (as regular organizer)
     assigned_tasks = await db.assigned_task_collection.find(
         {"organizer_id": {"$in": [organizer_id]}}
     ).to_list(length=None)
-
-    if not assigned_tasks:
-        raise HTTPException(status_code=404, detail="No assigned tasks found for this organizer")
-
-    # Extraire les task_id et les convertir en ObjectId
-    task_ids = [ObjectId(task["task_id"]) for task in assigned_tasks if ObjectId.is_valid(task["task_id"])]
-
-    if not task_ids:
-        raise HTTPException(status_code=404, detail="No valid task IDs found for this organizer")
-
-    # Étape 2 : Trouver les tâches dans task_collection
+    
+    if assigned_tasks:
+        # Map task_ids to regular organizer role
+        for task in assigned_tasks:
+            if ObjectId.is_valid(task["task_id"]):
+                task_roles[task["task_id"]] = {"is_supervisor": False}
+    
+    # Étape 2 : Récupérer les tâches où l'utilisateur est supervisor
+    supervised_tasks = await db.assigned_task_collection.find(
+        {"supervisor_id": organizer_id}
+    ).to_list(length=None)
+    
+    if supervised_tasks:
+        # Map task_ids to supervisor role
+        for task in supervised_tasks:
+            if ObjectId.is_valid(task["task_id"]):
+                task_roles[task["task_id"]] = {"is_supervisor": True}
+    
+    # If no tasks found at all, raise exception
+    if not task_roles:
+        raise HTTPException(status_code=404, detail="No tasks found for this organizer (neither as assignee nor supervisor)")
+    
+    # Convert keys to ObjectId for MongoDB query
+    task_ids = [ObjectId(task_id) for task_id in task_roles.keys()]
+    
+    # Étape 3 : Trouver toutes les tâches dans task_collection
     tasks = await db.task_collection.find({"_id": {"$in": task_ids}}).to_list(length=None)
-
-    # Convertir `_id` en `id` pour correspondre au modèle TaskRead
+    
+    # Create enhanced task objects with role information
+    enhanced_tasks = []
     for task in tasks:
-        task["id"] = str(task.pop("_id"))
-
-    return [TaskRead(**task) for task in tasks]
+        # Convert ObjectId to string for the response
+        task_id_str = str(task.pop("_id"))
+        task["id"] = task_id_str
+        
+        # Create a TaskRead object with additional is_supervisor field
+        task_data = dict(TaskRead(**task).dict())
+        # Add the is_supervisor information
+        task_data.update(task_roles[task_id_str])
+        enhanced_tasks.append(task_data)
+    
+    return enhanced_tasks
