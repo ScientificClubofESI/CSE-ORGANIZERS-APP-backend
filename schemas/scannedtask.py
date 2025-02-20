@@ -1,11 +1,9 @@
 from pydantic import BaseModel
-from typing import Optional
+from typing import List, Optional
 
 class ScannedTaskBase(BaseModel):
     task_id: str
-    participant_qr: str
-    scanned: bool = False
-
+    participant_qr: List[str]  # Tableau de participant_qr
 class ScannedTaskCreate(ScannedTaskBase):
     pass
 
@@ -15,4 +13,4 @@ class ScannedTaskRead(ScannedTaskBase):
 class ScannedTaskUpdate(BaseModel):
     task_id: str
     participant_qr: str
-    scanned: Optional[bool] = False
+    scanned: bool

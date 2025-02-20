@@ -17,38 +17,44 @@ async def create_scanned_task(scanned_task: ScannedTaskCreate):
 
 @router.put("/", response_model=ScannedTaskRead)
 async def update_scanned_status(scanned_task_update: ScannedTaskUpdate):
-    # Extract fields from the input
     task_id = scanned_task_update.task_id
     participant_qr = scanned_task_update.participant_qr
-    scanned_status = scanned_task_update.scanned
+    scanned = scanned_task_update.scanned
 
-    # Define the filter to find the specific task and participant
-    filter_query = {
-        "task_id": task_id,
-        "participant_qr": participant_qr
-    }
+    # Chercher la tâche existante
+    existing_task = await db.scanned_task_collection.find_one({"task_id": task_id})
 
-    # Define the update operation
-    update_data = {
-        "$set": {
-            "scanned": scanned_status
+    if existing_task is None:
+        # Créer une nouvelle tâche si elle n'existe pas
+        new_task = {
+            "task_id": task_id,
+            "participant_qr": [participant_qr] if scanned else []
         }
-    }
+        await db.scanned_task_collection.insert_one(new_task)
+        return ScannedTaskRead(**new_task)
 
-    # Perform the update operation
-    result = await db.scanned_task_collection.update_one(filter_query, update_data)
+    # Mettre à jour la liste des participants
+    if scanned:
+        # Ajouter le participant s'il n'est pas déjà présent
+        if participant_qr not in existing_task["participant_qr"]:
+            await db.scanned_task_collection.update_one(
+                {"task_id": task_id},
+                {"$addToSet": {"participant_qr": participant_qr}}
+            )
+    else:
+        # Retirer le participant s'il est présent
+        if participant_qr in existing_task["participant_qr"]:
+            await db.scanned_task_collection.update_one(
+                {"task_id": task_id},
+                {"$pull": {"participant_qr": participant_qr}}
+            )
 
-    # Check if the task was found and updated
-    if result.matched_count == 0:
-        raise HTTPException(status_code=404, detail="Task or participant not found")
-
-    # Fetch the updated task to return it
-    updated_task = await db.scanned_task_collection.find_one(filter_query)
+    # Récupérer et retourner la tâche mise à jour
+    updated_task = await db.scanned_task_collection.find_one({"task_id": task_id})
     if updated_task is None:
         raise HTTPException(status_code=404, detail="Task not found after update")
-
+    
     return ScannedTaskRead(**updated_task)
-
 
 
 @router.get("/{task_id}", response_model=List[dict])  

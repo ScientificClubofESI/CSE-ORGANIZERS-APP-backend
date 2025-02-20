@@ -3,8 +3,10 @@ from bson import ObjectId
 from db.models.tasks import Task
 from schemas.tasks import TaskCreate, TaskRead, TaskUpdate
 from typing import List
-from datetime import datetime
+from datetime import date, datetime , time
 from db import db
+import os
+import csv
 
 router = APIRouter()
 
@@ -67,7 +69,136 @@ async def update_task(task_id: str, task: TaskUpdate):
     # If the task was not found, raise a 404 error
     raise HTTPException(status_code=404, detail="Task not found")
 
+from fastapi import APIRouter, HTTPException
+from pydantic import BaseModel
+from datetime import datetime, date, time
+import os
+import csv
+from typing import List, Optional
+from bson import ObjectId
 
+router = APIRouter()
+
+# TaskBase model
+class TaskBase(BaseModel):
+    name: str
+    start_time: datetime
+    end_time: datetime
+    day: datetime
+    location: str
+    description: str
+    is_complete: bool = False
+    is_check_in: bool = False
+
+class TaskRead(TaskBase):
+    id: str
+
+# AssignedTaskBase model
+class AssignedTaskBase(BaseModel):
+    task_id: str
+    organizer_id: List[str]
+    supervisor_id: Optional[List[str]] = None
+
+class AssignedTaskRead(AssignedTaskBase):
+    id: str
+
+@router.post("/import_csv", response_model=List[TaskRead])
+async def import_tasks_from_csv():
+    # Define file path
+    current_dir = os.path.dirname(os.path.abspath(__file__))
+    file_path = os.path.join(current_dir, "../../csv/day1.csv")
+
+    if not os.path.exists(file_path):
+        raise HTTPException(
+            status_code=400, 
+            detail=f"CSV file not found at {file_path}. Please ensure tasks.csv exists."
+        )
+
+    new_tasks = []
+    task_ids = []  # To store IDs of inserted tasks
+
+    # Supervisor and organizer ID
+    supervisor_id = "67b2d9a965c4c7c2d7c0b6e1"
+    organizer_id = "67b2d9a965c4c7c2d7c0b6e1"
+
+    try:
+        with open(file_path, mode="r", encoding="utf-8") as file:
+            reader = csv.DictReader(file)
+            for row in reader:
+                # Parse day (assuming DAY is an integer representing the day of the month)
+                # Map DAY = 1 to 20/02/2025
+                day = date(2025, 2, 20) 
+
+                # Parse start_time
+                start_time = datetime.strptime(row["start_time"], "%H:%M").time()
+
+                # Parse end_time (default to start_time if not available or malformed)
+              
+               
+
+                # Combine date and time into datetime objects
+                start_datetime = datetime.combine(day, start_time)
+                end_datetime = datetime.combine(day, start_time)
+                day_datetime = datetime.combine(day, time.min)  # time.min is 00:00:00
+
+                # Handle is_check_in (default to False if empty)
+                is_check_in = (
+                    row.get("is_check_in", "False").lower() == "true"
+                    if row.get("is_check_in", "").strip()
+                    else False
+                )
+
+                # Create task data
+                task_data = {
+                    "name": row["name"],
+                    "start_time": start_datetime,
+                    "end_time": end_datetime,
+                    "day": day_datetime,
+                    "location": row["location"].replace("\n", " ").strip(),  # Handle multi-line values
+                    "description": row["description"].replace("\n", " ").strip(),  # Handle multi-line values
+                    "is_complete": False,  # Default to False
+                    "is_check_in": is_check_in,  # Use the parsed or default value
+                }
+
+                # Insert into task_collection
+                result = await db.task_collection.insert_one(task_data)
+                task_id = str(result.inserted_id)
+                task_data["id"] = task_id
+                task_ids.append(task_id)  # Store the task ID
+
+                # Append to new_tasks
+                new_tasks.append(TaskRead(**task_data))
+
+        # Assign tasks to supervisor and organizer
+        for task_id in task_ids:
+            assigned_task_data = {
+                "task_id": task_id,
+                "organizer_id": [organizer_id],  # List of organizer IDs
+                "supervisor_id": [supervisor_id],  # List of supervisor IDs
+            }
+
+            # Insert into assigned_task_collection
+            await db.assigned_task_collection.insert_one(assigned_task_data)
+
+    except FileNotFoundError:
+        raise HTTPException(status_code=400, detail="Could not open CSV file")
+    except KeyError as e:
+        raise HTTPException(
+            status_code=400, 
+            detail=f"CSV file is missing required column: {str(e)}"
+        )
+    except ValueError as e:
+        raise HTTPException(
+            status_code=400, 
+            detail=f"Invalid data format in CSV file: {str(e)}"
+        )
+    except Exception as e:
+        raise HTTPException(
+            status_code=500, 
+            detail=f"An error occurred while processing the CSV: {str(e)}"
+        )
+
+    return new_tasks
 
 @router.delete("/{task_id}")
 async def delete_task(task_id: str):
