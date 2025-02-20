@@ -19,12 +19,18 @@ async def create_task(task: TaskCreate):
 
 @router.get("/", response_model=List[TaskRead])
 async def get_all_tasks():
-    tasks = await db.task_collection.find().to_list()
+    tasks = await db.task_collection.find().to_list(length=None)
+    print("Raw tasks from DB:", tasks)  # Debug print
     if tasks:
+        transformed_tasks = []
         for task in tasks:
-            task["id"] = str(task.pop("_id")) 
-        return [TaskRead(**task) for task in tasks]
+            task["id"] = str(task["_id"])
+            del task["_id"]
+            transformed_tasks.append(task)
+        print("Transformed tasks:", transformed_tasks)  # Debug print
+        return [TaskRead(**task) for task in transformed_tasks]
     raise HTTPException(status_code=404, detail="No tasks found")
+
 
 @router.get("/{task_id}", response_model=TaskRead)
 async def get_task(task_id: str):
@@ -69,44 +75,13 @@ async def update_task(task_id: str, task: TaskUpdate):
     # If the task was not found, raise a 404 error
     raise HTTPException(status_code=404, detail="Task not found")
 
-from fastapi import APIRouter, HTTPException
-from pydantic import BaseModel
-from datetime import datetime, date, time
-import os
-import csv
-from typing import List, Optional
-from bson import ObjectId
 
-router = APIRouter()
-
-# TaskBase model
-class TaskBase(BaseModel):
-    name: str
-    start_time: datetime
-    end_time: datetime
-    day: datetime
-    location: str
-    description: str
-    is_complete: bool = False
-    is_check_in: bool = False
-
-class TaskRead(TaskBase):
-    id: str
-
-# AssignedTaskBase model
-class AssignedTaskBase(BaseModel):
-    task_id: str
-    organizer_id: List[str]
-    supervisor_id: Optional[List[str]] = None
-
-class AssignedTaskRead(AssignedTaskBase):
-    id: str
 
 @router.post("/import_csv", response_model=List[TaskRead])
 async def import_tasks_from_csv():
     # Define file path
     current_dir = os.path.dirname(os.path.abspath(__file__))
-    file_path = os.path.join(current_dir, "../../csv/day1.csv")
+    file_path = os.path.join(current_dir, "../../csv/day3.csv")
 
     if not os.path.exists(file_path):
         raise HTTPException(
@@ -127,7 +102,7 @@ async def import_tasks_from_csv():
             for row in reader:
                 # Parse day (assuming DAY is an integer representing the day of the month)
                 # Map DAY = 1 to 20/02/2025
-                day = date(2025, 2, 20) 
+                day = date(2025, 2, 22) 
 
                 # Parse start_time
                 start_time = datetime.strptime(row["start_time"], "%H:%M").time()

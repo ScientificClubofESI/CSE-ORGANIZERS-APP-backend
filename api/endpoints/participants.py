@@ -1,4 +1,5 @@
 import csv
+import json
 import os
 from typing import List
 from fastapi import APIRouter, UploadFile, File, HTTPException
@@ -140,6 +141,35 @@ async def import_participants_from_csv():
         return []
         
     return new_participants
+
+
+@router.get("/export_participants_ids")
+async def export_participants_ids():
+    """
+    Récupère les IDs de tous les participants existants dans la base de données
+    et les enregistre dans un fichier participants_ids.txt sous la forme ["id1", "id2", ...].
+    """
+    try:
+        # Récupérer tous les participants et extraire leurs IDs
+        participants_cursor = db.participant_collection.find({}, {"_id": 1})  # Ne récupérer que les IDs
+        participant_ids = [str(participant["_id"]) async for participant in participants_cursor]
+
+        if not participant_ids:
+            raise HTTPException(status_code=404, detail="Aucun participant trouvé dans la base de données.")
+        
+        # Sauvegarder les IDs dans un fichier .txt
+        current_dir = os.path.dirname(os.path.abspath(__file__))
+        ids_file_path = os.path.join(current_dir, "participants_ids.txt")
+
+        with open(ids_file_path, "w", encoding="utf-8") as txt_file:
+            txt_file.write(json.dumps(participant_ids))  # Écriture sous forme de liste JSON
+
+        return {"message": "IDs des participants exportés avec succès.", "file_path": ids_file_path}
+    
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Erreur lors de l'export des IDs : {str(e)}")
+
+
 
 @router.get("/{participant_id}", response_model=ParticipantRead)
 async def get_participant(participant_id: str):
